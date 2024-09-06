@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IP Info</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <style>
+      body {
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+      .card {
+        transition: background-color 0.3s ease, color 0.3s ease;
+        height: 100%;
+      }
+      pre {
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+      [data-bs-theme="dark"] .card {
+        background-color: #2b3035;
+        color: #fff;
+      }
+      [data-bs-theme="dark"] pre {
+        background-color: #343a40;
+        color: #f8f9fa;
+      }
+      [data-bs-theme="light"] .card {
+        background-color: #fff;
+        color: #212529;
+      }
+      [data-bs-theme="light"] pre {
+        background-color: #f8f9fa;
+        color: #212529;
+      }
+      #themeToggle {
+        cursor: pointer;
+        font-size: 1.5rem;
+        margin-left: 1rem;
+      }
+      .header-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      #searchbar {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+      #searchbar #sliding-panel-outer {
+        overflow: hidden;
+        transition: width 0.4s ease;
+        width: 240px;
+      }
+      #searchbar.collapsed #sliding-panel-outer {
+        width: 0;
+      }
+      #search-input {
+        width: 100%;
+      }
+      .search-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 31px;
+        cursor: pointer;
+        background-color: var(--bs-secondary-bg);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.25rem;
+      }
+      #searchbar .search-label .fa-times,
+      #searchbar.collapsed .search-label .fa-search {
+        display: block;
+      }
+      #searchbar .search-label .fa-search,
+      #searchbar.collapsed .search-label .fa-times {
+        display: none;
+      }
+      .card-body {
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      .card-body pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+      }
+      .card-body pre code {
+        display: block;
+        overflow-x: auto;
+      }
+      .card-header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .card-header .fa {
+        transition: transform 0.3s ease;
+      }
+      .card-header .collapsed .fa {
+        transform: rotate(-90deg);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-5">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>IP Info</h1>
+        <div class="header-controls">
+          <div id="searchbar" class="collapsed">
+            <div id="sliding-panel-outer">
+              <input
+                type="text"
+                id="search-input"
+                class="form-control form-control-sm"
+                placeholder="Search ..."
+              />
+            </div>
+            <div class="search-label">
+              <i class="fa fa-search"></i>
+              <i class="fa fa-times"></i>
+            </div>
+          </div>
+          <div id="themeToggle">
+            <i class="fas fa-sun"></i>
+          </div>
+        </div>
+      </div>
+      <div id="dataGrid" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Use the data directly without parsing
+      const ipData = {{.IpInfoJson}};
+
+      function renderGrid(data) {
+        const grid = document.getElementById('dataGrid');
+        grid.innerHTML = '';
+
+        Object.entries(data).forEach(([key, value], index) => {
+          const col = document.createElement('div');
+          col.className = 'col';
+          col.innerHTML = `
+            <div class="card">
+              <h5 class="card-header">
+                <a class="collapsed d-block" data-bs-toggle="collapse" href="#collapse-${index}" aria-expanded="false" aria-controls="collapse-${index}" id="heading-${index}">
+                  <i class="fa fa-chevron-down pull-right"></i>
+                  ${key}
+                </a>
+              </h5>
+              <div id="collapse-${index}" class="collapse" aria-labelledby="heading-${index}">
+                <div class="card-body">
+                  <pre><code>${JSON.stringify(value, null, 2)}</code></pre>
+                </div>
+              </div>
+            </div>
+          `;
+          grid.appendChild(col);
+        });
+      }
+
+      function searchData(query) {
+        const filteredData = Object.fromEntries(
+          Object.entries(ipData).filter(([key, value]) => 
+            key.toLowerCase().includes(query.toLowerCase()) ||
+            JSON.stringify(value).toLowerCase().includes(query.toLowerCase())
+          )
+        );
+        renderGrid(filteredData);
+      }
+
+      // Event listeners
+      document.getElementById('search-input').addEventListener('input', (e) => {
+        searchData(e.target.value);
+      });
+
+      $("#searchbar .search-label").on("click", function(e) {
+        e.preventDefault();
+        $("#searchbar").toggleClass("collapsed");
+        if (!$("#searchbar").hasClass("collapsed")) {
+          $("#search-input").focus();
+        }
+      });
+
+      const themeToggle = document.getElementById('themeToggle');
+      const themeIcon = themeToggle.querySelector('i');
+
+      themeToggle.addEventListener('click', function() {
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-bs-theme', newTheme);
+        themeIcon.className = newTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+      });
+
+      // Set initial theme based on system preference
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+        themeIcon.className = 'fas fa-moon';
+      }
+
+      // Initial render
+      renderGrid(ipData);
+    </script>
+  </body>
+</html>
