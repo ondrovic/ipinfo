@@ -11,5 +11,4 @@ services:
 
 
 networks:
-  ipinfo:
-    external: true
+  ipinfo: {}
